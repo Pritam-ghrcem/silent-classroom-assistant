@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+openai-whisper
+transformers
+torch
+mysql-connector-python
+pyspellchecker
+requests
+python-multipart
+pdfkit

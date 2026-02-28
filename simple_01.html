@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Silent Classroom Assistant</title>
+</head>
+
+<body>
+
+<h2>Upload Audio</h2>
+
+<input type="file" id="file">
+<button onclick="upload()">Upload</button>
+
+<p id="msg"></p>
+
+<script>
+
+async function upload() {
+
+    const fileInput = document.getElementById("file");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select file");
+        return;
+    }
+
+    console.log("Uploading file:", file.name);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+
+        const response = await fetch("http://127.0.0.1:8000/process-audio/", {
+            method: "POST",
+            body: formData
+        });
+
+        console.log("Response status:", response.status);
+
+        // 🔥 IMPORTANT: read text first
+        const text = await response.text();
+        console.log("Raw response:", text);
+
+        let data;
+
+        try {
+            data = JSON.parse(text);
+        } catch (err) {
+            throw new Error("Server did not return JSON");
+        }
+
+        console.log("Parsed data:", data);
+
+        if (data.status !== "success") {
+            document.getElementById("msg").innerText =
+                "❌ Error: " + data.message;
+            return;
+        }
+
+        // ✅ SUCCESS OUTPUT
+        let output = "✅ SUCCESS\n\n";
+
+        output += "📝 Notes:\n";
+        data.data.notes.forEach(n => {
+            output += "- " + n + "\n";
+        });
+
+        output += "\n🔑 Keywords:\n";
+        output += data.data.keywords.join(", ");
+
+        output += "\n\n📺 YouTube:\n";
+        data.data.youtube_links.forEach(v => {
+            output += v.topic + " -> " + v.link + "\n";
+        });
+
+        output += "\n\n⬇ Downloads:\n";
+        output += "HTML: http://127.0.0.1:8000/download-html\n";
+        output += "PDF: http://127.0.0.1:8000/download-pdf\n";
+
+        document.getElementById("msg").innerText = output;
+
+    } catch (error) {
+        console.error("ERROR:", error);
+
+        document.getElementById("msg").innerText =
+            "❌ Failed to connect to API\n\n" +
+            "Check:\n" +
+            "1. Server running?\n" +
+            "2. Port 8000 open?\n" +
+            "3. Correct URL?\n\n" +
+            error;
+    }
+}
+
+</script>
+
+</body>
+</html>

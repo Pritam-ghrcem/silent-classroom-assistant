@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silent Classroom Assistant</title>
+
+<style>
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    background: rgba(255,255,255,0.1);
+    padding: 30px;
+    border-radius: 15px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+h1 {
+    text-align: center;
+}
+
+.upload-box {
+    text-align: center;
+}
+
+input[type="file"] {
+    padding: 10px;
+    border-radius: 8px;
+    background: white;
+    color: black;
+}
+
+button {
+    margin-top: 15px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: none;
+    background: #00c6ff;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background: #0072ff;
+}
+
+.notes {
+    background: white;
+    color: black;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+    line-height: 1.6;
+}
+
+.keywords {
+    margin-top: 10px;
+}
+
+.keywords span {
+    display: inline-block;
+    background: orange;
+    padding: 6px 10px;
+    margin: 5px;
+    border-radius: 20px;
+}
+
+.video-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+}
+
+.video-box a {
+    display: block;
+    background: rgba(0,255,200,0.1);
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #00ffcc;
+}
+
+.video-box a:hover {
+    background: rgba(0,255,200,0.3);
+}
+
+.downloads {
+    margin-top: 20px;
+}
+
+.downloads a {
+    display: inline-block;
+    margin-right: 10px;
+    padding: 10px 15px;
+    background: yellow;
+    color: black;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.downloads a:hover {
+    background: orange;
+}
+
+#loading {
+    display: none;
+    text-align: center;
+    margin-top: 15px;
+    font-size: 18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎓 Silent Classroom Assistant</h1>
+
+<div class="upload-box">
+    <input type="file" id="audioFile" accept="audio/*">
+    <br>
+    <button id="uploadBtn">Upload & Generate Notes</button>
+</div>
+
+<p id="loading">⏳ Processing your lecture...</p>
+
+<div id="result"></div>
+
+</div>
+
+<script>
+
+// 🔥 Wait for page to load
+document.addEventListener("DOMContentLoaded", function () {
+
+    console.log("JS Loaded");
+
+    const button = document.getElementById("uploadBtn");
+
+    if (!button) {
+        console.error("Button not found!");
+        return;
+    }
+
+    button.addEventListener("click", uploadAudio);
+});
+
+async function uploadAudio() {
+
+    console.log("Button Clicked");
+
+    const fileInput = document.getElementById("audioFile");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please select an audio file");
+        return;
+    }
+
+    console.log("Uploading file:", file.name);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    document.getElementById("loading").style.display = "block";
+    document.getElementById("result").innerHTML = "";
+
+    try {
+
+        const response = await fetch("http://127.0.0.1:8000/process-audio/", {
+            method: "POST",
+            body: formData
+        });
+
+        console.log("Response:", response);
+
+        const text = await response.text();
+        console.log("Raw Response:", text);
+
+        const res = JSON.parse(text);
+        console.log("Parsed JSON:", res);
+
+        if (!res || res.status !== "success" || !res.data) {
+            alert(res.message || "Server returned invalid data");
+            return;
+        }
+
+        console.log("Displaying result...");
+        displayResult(res);
+
+    } catch (error) {
+        console.error("ERROR:", error);
+        alert("❌ API Error: " + error.message);
+    } finally {
+        document.getElementById("loading").style.display = "none";
+    }
+}
+
+function displayResult(res) {
+
+    let data = res.data;
+
+    let html = "<h2>📝 Lecture Notes</h2>";
+
+    html += "<div class='notes'>";
+    data.notes.forEach(n => {
+        html += `<p>${n}</p>`;
+    });
+    html += "</div>";
+
+    html += "<h2>🔑 Keywords</h2>";
+    html += "<div class='keywords'>";
+    data.keywords.forEach(k => {
+        html += `<span>${k}</span>`;
+    });
+    html += "</div>";
+
+    html += "<h2>📺 Related Videos</h2>";
+
+    if (data.youtube_links && data.youtube_links.length > 0) {
+        data.youtube_links.forEach(v => {
+            html += `
+            <div class="video-box">
+                <h3>${v.topic}</h3>
+                <a href="${v.link}" target="_blank">▶ Watch on YouTube</a>
+            </div>
+            `;
+        });
+    } else {
+        html += "<p>No videos available</p>";
+    }
+
+    html += `
+    <div class="downloads">
+        <h2>⬇ Download</h2>
+        <a href="${res.download_html}" target="_blank">Download HTML</a>
+        <a href="${res.download_pdf}" target="_blank">Download PDF</a>
+    </div>
+    `;
+
+    document.getElementById("result").innerHTML = html;
+}
+
+</script>
+
+</body>
+</html>

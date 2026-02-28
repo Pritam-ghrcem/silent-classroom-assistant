@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silent Classroom Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0a0a0f;
+  --paper: #f5f2eb;
+  --accent: #e8481c;
+  --accent2: #1c6fe8;
+  --muted: #8a8780;
+  --card: #ffffff;
+  --border: #ddd9d0;
+  --green: #1cb87a;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.5;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 48px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 100;
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-dot {
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.hero {
+  padding: 80px 48px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hero-label {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-label::before {
+  content: '';
+  display: inline-block;
+  width: 24px; height: 1px;
+  background: var(--accent);
+}
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(42px, 6vw, 80px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -2px;
+  margin-bottom: 30px;
+}
+
+h1 span.outline {
+  -webkit-text-stroke: 2px var(--ink);
+  color: transparent;
+}
+
+h1 span.accent { color: var(--accent); }
+
+.hero-sub {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 420px;
+  line-height: 1.7;
+}
+
+.upload-section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.upload-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-card::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(232,72,28,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.drop-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  padding: 50px 30px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(232,72,28,0.03);
+}
+
+.drop-icon {
+  font-size: 40px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.drop-zone h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.drop-zone p {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.file-formats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.format-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+#audioFile {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+#fileStatus {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  min-height: 20px;
+}
+
+#fileStatus.selected {
+  color: var(--green);
+  font-weight: 500;
+}
+
+.upload-btn {
+  margin-top: 24px;
+  width: 100%;
+  padding: 16px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: var(--accent);
+  transform: translateY(-1px);
+}
+
+.upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.info-card {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 16px;
+  padding: 40px;
+}
+
+.info-card h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 30px;
+}
+
+.steps { display: flex; flex-direction: column; gap: 0; }
+
+.step {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.step:last-child { border-bottom: none; }
+
+.step-num {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  min-width: 24px;
+  padding-top: 2px;
+}
+
+.step-text strong {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.step-text span {
+  font-size: 11px;
+  color: rgba(245,242,235,0.5);
+  line-height: 1.6;
+}
+
+#loading {
+  display: none;
+  max-width: 1100px;
+  margin: 0 auto 40px;
+  padding: 0 48px;
+}
+
+.loading-bar-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 40px;
+}
+
+.loading-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.spinner {
+  width: 14px; height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.bar-track {
+  height: 3px;
+  background: var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 10px;
+  animation: indeterminate 1.5s ease-in-out infinite;
+  transform-origin: left;
+}
+
+@keyframes indeterminate {
+  0% { transform: scaleX(0) translateX(0); }
+  50% { transform: scaleX(0.5) translateX(50%); }
+  100% { transform: scaleX(0) translateX(300%); }
+}
+
+.loading-steps {
+  display: flex;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.l-step {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.l-step.active { color: var(--accent); }
+.l-step.done { color: var(--green); }
+
+#result {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+  display: none;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.result-meta { font-size: 11px; color: var(--muted); }
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+.notes-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px;
+}
+
+.card-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-label::before {
+  content: '';
+  display: inline-block;
+  width: 16px; height: 1px;
+  background: var(--muted);
+}
+
+.note-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--paper);
+  font-size: 13px;
+  line-height: 1.7;
+  animation: fadeUp 0.4s ease both;
+}
+
+.note-item:last-child { border-bottom: none; }
+
+.note-bullet {
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 16px;
+  padding-top: 2px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+.side-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+}
+
+.keywords-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.keyword-chip {
+  font-size: 11px;
+  padding: 6px 12px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  transition: all 0.15s ease;
+  animation: fadeUp 0.4s ease both;
+}
+
+.keyword-chip:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.yt-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--ink);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  margin-bottom: 8px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.yt-item:last-child { margin-bottom: 0; }
+
+.yt-item:hover {
+  background: var(--paper);
+  border-color: var(--border);
+}
+
+.yt-icon {
+  width: 36px; height: 36px;
+  background: #ff0000;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  color: white;
+}
+
+.yt-topic {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.yt-sub {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.download-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.dl-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+
+.dl-btn .dl-icon { font-size: 22px; }
+.dl-btn.html:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.dl-btn.pdf:hover  { background: var(--accent); color: white; border-color: var(--accent); }
+
+@media (max-width: 768px) {
+  header, .hero, .upload-section, #loading, #result {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .upload-section { grid-template-columns: 1fr; }
+  .result-grid { grid-template-columns: 1fr; }
+  h1 { font-size: 36px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Silent Classroom
+  </div>
+  <span class="status-badge">API: localhost:8000</span>
+</header>
+
+<section class="hero">
+  <p class="hero-label">AI-Powered Lecture Tool</p>
+  <h1>
+    Turn lectures<br>
+    into <span class="outline">smart</span><br>
+    <span class="accent">notes.</span>
+  </h1>
+  <p class="hero-sub">Upload any lecture audio and get instant transcription, bullet-point notes, key concepts, and curated YouTube resources.</p>
+</section>
+
+<section class="upload-section">
+  <div class="upload-card">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="audioFile" accept=".wav,.mp3,.m4a">
+      <span class="drop-icon">🎙️</span>
+      <h3>Drop your audio here</h3>
+      <p>or click to browse files</p>
+      <div class="file-formats">
+        <span class="format-tag">.WAV</span>
+        <span class="format-tag">.MP3</span>
+        <span class="format-tag">.M4A</span>
+      </div>
+    </div>
+    <div id="fileStatus">No file selected</div>
+    <button class="upload-btn" id="uploadBtn" disabled>
+      <span>▶</span> Process Lecture
+    </button>
+  </div>
+
+  <div class="info-card">
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">01</span>
+        <div class="step-text">
+          <strong>Speech to Text</strong>
+          <span>Whisper AI transcribes your lecture audio with high accuracy</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <div class="step-text">
+          <strong>Summarization</strong>
+          <span>BART model compresses the content into core ideas</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <div class="step-text">
+          <strong>Bullet Notes</strong>
+          <span>Key sentences extracted and formatted as study notes</span>
+        </div>
+      </div>
+      <div class="step">
+        <span class="step-num">04</span>
+        <div class="step-text">
+          <strong>YouTube Links</strong>
+          <span>Relevant tutorials suggested for each key concept</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="loading">
+  <div class="loading-bar-wrap">
+    <div class="loading-label">
+      <div class="spinner"></div>
+      <span id="loadingText">Initializing pipeline...</span>
+    </div>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+    <div class="loading-steps">
+      <span class="l-step" id="ls1">🎤 Transcribing</span>
+      <span class="l-step" id="ls2">📄 Summarizing</span>
+      <span class="l-step" id="ls3">🔑 Extracting</span>
+      <span class="l-step" id="ls4">✅ Done</span>
+    </div>
+  </div>
+</div>
+
+<div id="result">
+  <div class="result-header">
+    <h2 class="result-title">Lecture Notes</h2>
+    <span class="result-meta" id="resultMeta"></span>
+  </div>
+  <div class="result-grid">
+    <div class="notes-card">
+      <div class="card-label">Study Notes</div>
+      <div id="notesList"></div>
+    </div>
+    <div class="sidebar">
+      <div class="side-card">
+        <div class="card-label">Key Concepts</div>
+        <div class="keywords-wrap" id="keywordsList"></div>
+      </div>
+      <div class="side-card">
+        <div class="card-label">YouTube Resources</div>
+        <div id="ytList"></div>
+      </div>
+      <div class="side-card">
+        <div class="card-label">Export Notes</div>
+        <div class="download-row">
+          <a class="dl-btn html" id="dlHtml" href="#" target="_blank">
+            <span class="dl-icon">🌐</span> HTML
+          </a>
+          <a class="dl-btn pdf" id="dlPdf" href="#" target="_blank">
+            <span class="dl-icon">📄</span> PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fileInput  = document.getElementById("audioFile");
+const dropZone   = document.getElementById("dropZone");
+const fileStatus = document.getElementById("fileStatus");
+const uploadBtn  = document.getElementById("uploadBtn");
+const loadingEl  = document.getElementById("loading");
+const resultEl   = document.getElementById("result");
+
+// ---- FILE SELECTION ----
+fileInput.addEventListener("change", () => {
+  const f = fileInput.files[0];
+  if (f) {
+    fileStatus.textContent = `✓ ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)`;
+    fileStatus.className = "selected";
+    uploadBtn.disabled = false;
+  }
+});
+
+// ---- DRAG & DROP ----
+dropZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  dropZone.classList.add("dragover");
+});
+
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("dragover");
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    const valid = [".wav", ".mp3", ".m4a"].some(ext => f.name.toLowerCase().endsWith(ext));
+    if (!valid) { alert("Please drop a .wav, .mp3, or .m4a file"); return; }
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    fileInput.files = dt.files;
+    fileStatus.textContent = `✓ ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)`;
+    fileStatus.className = "selected";
+    uploadBtn.disabled = false;
+  }
+});
+
+// ---- LOADING ANIMATION ----
+let loadingInterval;
+function animateLoading() {
+  const steps = [
+    { id: "ls1", text: "Transcribing audio..." },
+    { id: "ls2", text: "Summarizing content..." },
+    { id: "ls3", text: "Extracting keywords..." },
+    { id: "ls4", text: "Almost done..." }
+  ];
+  let i = 0;
+  document.getElementById("loadingText").textContent = steps[0].text;
+  document.getElementById(steps[0].id).className = "l-step active";
+
+  loadingInterval = setInterval(() => {
+    if (i < steps.length - 1) {
+      document.getElementById(steps[i].id).className = "l-step done";
+      i++;
+      document.getElementById(steps[i].id).className = "l-step active";
+      document.getElementById("loadingText").textContent = steps[i].text;
+    }
+  }, 8000);
+}
+
+function stopLoading() {
+  clearInterval(loadingInterval);
+  ["ls1","ls2","ls3","ls4"].forEach(id => {
+    document.getElementById(id).className = "l-step done";
+  });
+}
+
+// ---- UPLOAD ----
+uploadBtn.addEventListener("click", () => {
+  const file = fileInput.files[0];
+  if (!file) { alert("Please select a file first"); return; }
+
+  uploadBtn.disabled = true;
+  loadingEl.style.display = "block";
+  resultEl.style.display  = "none";
+  loadingEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  animateLoading();
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "http://127.0.0.1:8000/process-audio/");
+
+  xhr.onload = function () {
+    stopLoading();
+    loadingEl.style.display = "none";
+    uploadBtn.disabled = false;
+    try {
+      const res = JSON.parse(xhr.responseText);
+      if (res.status !== "success" || !res.data) {
+        alert("❌ Error: " + (res.message || "Unknown error"));
+      } else {
+        renderResult(res);
+      }
+    } catch (e) {
+      alert("❌ Invalid response from server");
+    }
+  };
+
+  xhr.onerror = function () {
+    stopLoading();
+    loadingEl.style.display = "none";
+    uploadBtn.disabled = false;
+    alert("❌ Cannot connect to server.\nMake sure: python -m uvicorn api:app --reload is running.");
+  };
+
+  xhr.send(formData);
+});
+
+// ---- RENDER RESULT ----
+function renderResult(res) {
+  const data = res.data;
+  const now  = new Date().toLocaleTimeString();
+  document.getElementById("resultMeta").textContent = `Generated at ${now}`;
+
+  // Notes
+  const notesList = document.getElementById("notesList");
+  notesList.innerHTML = "";
+  if (data.notes && data.notes.length > 0) {
+    data.notes.forEach((n, i) => {
+      const clean = n.replace(/^[•\-]\s*/, "");
+      const div = document.createElement("div");
+      div.className = "note-item";
+      div.style.animationDelay = `${i * 0.07}s`;
+      div.innerHTML = `<span class="note-bullet">→</span><span>${clean}</span>`;
+      notesList.appendChild(div);
+    });
+  } else {
+    notesList.innerHTML = `<p style="color:var(--muted);font-size:13px">No notes generated.</p>`;
+  }
+
+  // Keywords
+  const keysList = document.getElementById("keywordsList");
+  keysList.innerHTML = "";
+  if (data.keywords && data.keywords.length > 0) {
+    data.keywords.forEach((k, i) => {
+      const span = document.createElement("span");
+      span.className = "keyword-chip";
+      span.style.animationDelay = `${i * 0.08}s`;
+      span.textContent = k;
+      keysList.appendChild(span);
+    });
+  } else {
+    keysList.innerHTML = `<span style="color:var(--muted);font-size:12px">No keywords found.</span>`;
+  }
+
+  // YouTube
+  const ytList = document.getElementById("ytList");
+  ytList.innerHTML = "";
+  if (data.youtube_links && data.youtube_links.length > 0) {
+    data.youtube_links.forEach((v, i) => {
+      const a = document.createElement("a");
+      a.className = "yt-item";
+      a.href = v.link;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.style.animationDelay = `${i * 0.08}s`;
+      a.innerHTML = `
+        <div class="yt-icon">▶</div>
+        <div>
+          <div class="yt-topic">${v.topic}</div>
+          <div class="yt-sub">Search on YouTube →</div>
+        </div>
+      `;
+      ytList.appendChild(a);
+    });
+  } else {
+    ytList.innerHTML = `<p style="color:var(--muted);font-size:12px">No videos available.</p>`;
+  }
+
+  // Downloads
+  document.getElementById("dlHtml").href = res.download_html;
+  document.getElementById("dlPdf").href  = res.download_pdf;
+
+  resultEl.style.display = "block";
+  resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Silent Classroom Assistant</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    text-align: center;
+}
+
+.container {
+    width: 70%;
+    margin: auto;
+    margin-top: 40px;
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+button {
+    padding: 10px 20px;
+    background: #00c6ff;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.notes {
+    background: white;
+    color: black;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 10px;
+    text-align: left;
+}
+
+iframe {
+    margin-top: 10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎓 Silent Classroom Assistant</h1>
+
+<input type="file" id="file">
+<br><br>
+<button onclick="upload()">Upload & Generate Notes</button>
+
+<p id="loading" style="display:none;">⏳ Processing...</p>
+
+<div id="output"></div>
+
+</div>
+
+<script>
+
+async function upload() {
+
+    let file = document.getElementById("file").files[0]
+
+    if (!file) {
+        alert("Please select a file")
+        return
+    }
+
+    let form = new FormData()
+    form.append("file", file)
+
+    document.getElementById("loading").style.display = "block"
+    document.getElementById("output").innerHTML = ""
+
+    try {
+
+        let res = await fetch("http://127.0.0.1:8000/process-audio/", {
+            method: "POST",
+            body: form
+        })
+
+        let data = await res.json()
+
+        console.log(data)
+
+        if (data.status !== "success") {
+            alert("Error: " + data.message)
+            return
+        }
+
+        display(data.data)
+
+    } catch (err) {
+        alert("Error connecting to API")
+        console.error(err)
+    }
+
+    document.getElementById("loading").style.display = "none"
+}
+
+
+function display(data) {
+
+    let html = "<h2>📝 Lecture Notes</h2>"
+    html += "<div class='notes'>"
+
+    // ✅ FIXED NOTES
+    data.notes.forEach(n => {
+        html += `<p>${n}</p>`
+    })
+
+    html += "</div>"
+
+    // ✅ KEYWORDS
+    html += "<h2>🔑 Keywords</h2>"
+    data.keywords.forEach(k => {
+        html += `<span style="background:orange;padding:5px;margin:5px;border-radius:5px;">${k}</span>`
+    })
+
+    // ✅ YOUTUBE VIDEOS
+    html += "<h2>📺 Videos</h2>"
+
+    data.youtube_videos.forEach(v => {
+
+        html += `
+        <p>${v.topic}</p>
+        <iframe width="400" height="200"
+        src="https://www.youtube.com/embed/${v.video_id}"
+        frameborder="0" allowfullscreen>
+        </iframe>
+        `
+    })
+
+    document.getElementById("output").innerHTML = html
+}
+
+</script>
+
+</body>
+</html>

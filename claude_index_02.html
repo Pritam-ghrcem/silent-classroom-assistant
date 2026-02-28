@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Silent Classroom Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f0f13;
+  --bg2:       #16161d;
+  --bg3:       #1e1e28;
+  --border:    #2a2a38;
+  --border2:   #363648;
+  --text:      #e8e6f0;
+  --muted:     #7a7890;
+  --accent:    #7c6af5;
+  --accent2:   #e86c4a;
+  --green:     #4ade9a;
+  --yellow:    #f5c842;
+  --card:      #18181f;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.4;
+}
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 48px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+  background: rgba(15,15,19,0.92);
+  backdrop-filter: blur(20px);
+  z-index: 100;
+}
+
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+  letter-spacing: -0.3px;
+}
+
+.logo-mark {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+}
+
+.nav-pills { display: flex; gap: 8px; }
+
+.pill {
+  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+  padding: 5px 12px;
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+.pill.active { border-color: var(--accent); color: var(--accent); }
+
+.hero {
+  padding: 72px 48px 56px;
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 24px;
+}
+
+.hero-tag::before {
+  content: '';
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%,100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight: 900; line-height: 1.0;
+  letter-spacing: -1.5px;
+  margin-bottom: 24px;
+}
+
+h1 em {
+  font-style: italic;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+.hero-desc {
+  font-size: 15px; color: var(--muted); line-height: 1.8;
+  max-width: 400px; font-weight: 300;
+}
+
+.steps-panel {
+  display: flex; flex-direction: column; gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+  background: var(--card);
+}
+
+.step-row {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+
+.step-row:last-child { border-bottom: none; }
+.step-row:hover { background: var(--bg3); }
+
+.step-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--accent); flex-shrink: 0; margin-top: 2px;
+}
+
+.step-content strong {
+  font-size: 13px; font-weight: 600; display: block; margin-bottom: 3px;
+}
+
+.step-content span {
+  font-size: 12px; color: var(--muted); line-height: 1.5; font-weight: 300;
+}
+
+.upload-section {
+  max-width: 1200px; margin: 0 auto;
+  padding: 0 48px 64px;
+}
+
+.upload-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px; padding: 40px;
+}
+
+.drop-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: 14px; padding: 48px 32px;
+  text-align: center; cursor: pointer;
+  transition: all 0.25s ease; position: relative;
+  background: var(--bg);
+}
+
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(124, 106, 245, 0.04);
+}
+
+.drop-icon {
+  width: 56px; height: 56px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 16px; margin: 0 auto 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+
+.drop-zone h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; font-weight: 600; margin-bottom: 6px;
+}
+
+.drop-zone p { font-size: 13px; color: var(--muted); margin-bottom: 20px; font-weight: 300; }
+
+.format-tags { display: flex; gap: 8px; justify-content: center; }
+
+.fmt {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px; padding: 4px 10px;
+  border: 1px solid var(--border2); border-radius: 6px;
+  color: var(--muted); letter-spacing: 0.1em;
+}
+
+#audioFile {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%;
+}
+
+#fileStatus {
+  margin-top: 14px; font-size: 12px; color: var(--muted);
+  font-family: 'IBM Plex Mono', monospace; min-height: 20px;
+}
+
+#fileStatus.selected { color: var(--green); }
+
+.process-btn {
+  margin-top: 20px; width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--accent), #5c4bd4);
+  color: white; border: none; border-radius: 12px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.process-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(124,106,245,0.35);
+}
+
+.process-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#loading {
+  display: none;
+  max-width: 1200px; margin: 0 auto 32px;
+  padding: 0 48px;
+}
+
+.loading-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px 40px;
+}
+
+.loading-top {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid var(--border2); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loadingText { font-size: 13px; color: var(--muted); font-weight: 300; }
+
+.progress-track {
+  height: 2px; background: var(--border); border-radius: 10px; overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  animation: progress 2s ease-in-out infinite;
+  transform-origin: left;
+}
+
+@keyframes progress {
+  0% { transform: scaleX(0) translateX(0); }
+  50% { transform: scaleX(0.6) translateX(60%); }
+  100% { transform: scaleX(0) translateX(250%); }
+}
+
+.loading-stages { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.stage {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  padding: 5px 12px; border-radius: 100px;
+  border: 1px solid var(--border); color: var(--muted);
+  transition: all 0.3s;
+}
+
+.stage.active { border-color: var(--accent); color: var(--accent); background: rgba(124,106,245,0.08); }
+.stage.done   { border-color: var(--green);  color: var(--green);  background: rgba(74,222,154,0.06); }
+
+#result {
+  display: none;
+  max-width: 1200px; margin: 0 auto;
+  padding: 0 48px 80px;
+}
+
+.result-header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 32px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.result-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; font-weight: 700; letter-spacing: -0.5px;
+}
+
+.result-meta {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; color: var(--muted);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+
+.notes-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 36px; overflow: hidden;
+}
+
+.card-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 28px;
+}
+
+.card-tag {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--muted); padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 100px;
+}
+
+.card-count {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  color: var(--accent); margin-left: auto;
+}
+
+.note-item {
+  display: grid; grid-template-columns: 20px 1fr;
+  gap: 14px; padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.4s ease both;
+}
+
+.note-item:last-child { border-bottom: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.note-arrow {
+  color: var(--accent); font-size: 14px;
+  padding-top: 1px; font-family: 'IBM Plex Mono', monospace;
+}
+
+.note-text {
+  font-size: 14px; line-height: 1.75;
+  color: var(--text); font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+.note-text b {
+  color: var(--yellow); font-weight: 600;
+  background: rgba(245,200,66,0.08);
+  padding: 1px 4px; border-radius: 4px;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, rgba(124,106,245,0.08), rgba(232,108,74,0.05));
+  border: 1px solid rgba(124,106,245,0.25);
+  border-radius: 16px; padding: 24px; margin-bottom: 20px;
+}
+
+.summary-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.15em;
+  color: var(--accent); margin-bottom: 12px;
+}
+
+.summary-text {
+  font-size: 13px; line-height: 1.8;
+  color: rgba(232,230,240,0.8); font-weight: 300;
+  font-style: italic;
+}
+
+.sidebar { display: flex; flex-direction: column; gap: 16px; }
+
+.side-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px;
+}
+
+.kw-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.kw-chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  padding: 6px 14px;
+  border: 1px solid var(--border2); border-radius: 100px;
+  color: var(--text); cursor: default;
+  transition: all 0.15s ease;
+  animation: fadeIn 0.4s ease both;
+}
+
+.kw-chip:hover {
+  border-color: var(--accent); color: var(--accent);
+  background: rgba(124,106,245,0.08);
+}
+
+.yt-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px; border-radius: 10px;
+  text-decoration: none; color: var(--text);
+  border: 1px solid transparent;
+  transition: all 0.15s; margin-bottom: 6px;
+  animation: fadeIn 0.4s ease both;
+}
+
+.yt-item:last-child { margin-bottom: 0; }
+.yt-item:hover { background: var(--bg3); border-color: var(--border); }
+
+.yt-icon {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: #ff0000; display: flex; align-items: center;
+  justify-content: center; font-size: 12px; color: white; flex-shrink: 0;
+}
+
+.yt-name { font-size: 12px; font-weight: 500; line-height: 1.3; }
+.yt-sub  { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: 'IBM Plex Mono', monospace; }
+
+.dl-row { display: flex; gap: 10px; margin-top: 12px; }
+
+.dl-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 8px; padding: 18px 10px;
+  border-radius: 12px; text-decoration: none;
+  border: 1px solid var(--border); color: var(--text);
+  font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500; transition: all 0.15s ease;
+}
+
+.dl-btn .dl-icon { font-size: 24px; }
+.dl-btn.html:hover { background: rgba(124,106,245,0.12); border-color: var(--accent); color: var(--accent); }
+.dl-btn.pdf:hover  { background: rgba(232,108,74,0.12);  border-color: var(--accent2); color: var(--accent2); }
+
+@media (max-width: 900px) {
+  header, .hero, .upload-section, #loading, #result { padding-left: 20px; padding-right: 20px; }
+  .hero { grid-template-columns: 1fr; gap: 40px; }
+  .result-grid { grid-template-columns: 1fr; }
+  h1 { font-size: 36px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🎙</div>
+    Silent Classroom
+  </div>
+  <div class="nav-pills">
+    <span class="pill active">v2.0 · Groq AI</span>
+    <span class="pill">localhost:8000</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">AI-Powered Lecture Tool</div>
+    <h1>Turn any lecture<br>into <em>smart notes.</em></h1>
+    <p class="hero-desc">Upload your classroom audio and get instant transcription, summarized bullet notes, key concepts, and curated YouTube resources — powered by Groq AI.</p>
+  </div>
+
+  <div class="steps-panel">
+    <div class="step-row">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <strong>Speech to Text</strong>
+        <span>Faster-Whisper transcribes your audio with high accuracy</span>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <strong>AI Summarization</strong>
+        <span>Groq Llama 3 compresses lecture into core ideas</span>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <strong>Structured Notes</strong>
+        <span>Key sentences extracted and formatted as bullet notes</span>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <strong>YouTube Resources</strong>
+        <span>Relevant tutorials suggested for each key concept</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="upload-section">
+  <div class="upload-card">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="audioFile" accept=".wav,.mp3,.m4a">
+      <div class="drop-icon">🎧</div>
+      <h3>Drop your lecture audio here</h3>
+      <p>or click to browse files from your computer</p>
+      <div class="format-tags">
+        <span class="fmt">.WAV</span>
+        <span class="fmt">.MP3</span>
+        <span class="fmt">.M4A</span>
+      </div>
+    </div>
+    <div id="fileStatus">No file selected</div>
+    <button class="process-btn" id="uploadBtn" disabled>▶ &nbsp;Process Lecture</button>
+  </div>
+</section>
+
+<div id="loading">
+  <div class="loading-card">
+    <div class="loading-top">
+      <div class="spinner"></div>
+      <span id="loadingText">Initializing pipeline...</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill"></div></div>
+    <div class="loading-stages">
+      <span class="stage" id="st1">🎤 Transcribing</span>
+      <span class="stage" id="st2">🧹 Cleaning</span>
+      <span class="stage" id="st3">🤖 Groq AI</span>
+      <span class="stage" id="st4">🔑 Extracting</span>
+      <span class="stage" id="st5">✅ Done</span>
+    </div>
+  </div>
+</div>
+
+<div id="result">
+  <div class="result-header">
+    <h2 class="result-title">Lecture Notes</h2>
+    <span class="result-meta" id="resultMeta"></span>
+  </div>
+  <div class="result-grid">
+    <div class="notes-card">
+      <div class="summary-card" id="summaryCard" style="display:none">
+        <div class="summary-label">✦ AI Summary</div>
+        <p class="summary-text" id="summaryText"></p>
+      </div>
+      <div class="card-header">
+        <span class="card-tag">Study Notes</span>
+        <span class="card-count" id="noteCount"></span>
+      </div>
+      <div id="notesList"></div>
+    </div>
+    <div class="sidebar">
+      <div class="side-card">
+        <div class="card-header">
+          <span class="card-tag">Key Concepts</span>
+          <span class="card-count" id="kwCount"></span>
+        </div>
+        <div class="kw-wrap" id="kwList"></div>
+      </div>
+      <div class="side-card">
+        <div class="card-header">
+          <span class="card-tag">YouTube Resources</span>
+        </div>
+        <div id="ytList"></div>
+      </div>
+      <div class="side-card">
+        <div class="card-header">
+          <span class="card-tag">Export Notes</span>
+        </div>
+        <div class="dl-row">
+          <a class="dl-btn html" id="dlHtml" href="#" target="_blank">
+            <span class="dl-icon">🌐</span>HTML
+          </a>
+          <a class="dl-btn pdf" id="dlPdf" href="#" target="_blank">
+            <span class="dl-icon">📄</span>PDF
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const fileInput  = document.getElementById("audioFile");
+const dropZone   = document.getElementById("dropZone");
+const fileStatus = document.getElementById("fileStatus");
+const uploadBtn  = document.getElementById("uploadBtn");
+const loadingEl  = document.getElementById("loading");
+const resultEl   = document.getElementById("result");
+
+fileInput.addEventListener("change", () => {
+  const f = fileInput.files[0];
+  if (f) {
+    fileStatus.textContent = `✓  ${f.name}  (${(f.size/1024/1024).toFixed(2)} MB)`;
+    fileStatus.className = "selected";
+    uploadBtn.disabled = false;
+  }
+});
+
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault(); dropZone.classList.remove("dragover");
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  const ok = [".wav",".mp3",".m4a"].some(x => f.name.toLowerCase().endsWith(x));
+  if (!ok) { alert("Please drop a .wav, .mp3 or .m4a file"); return; }
+  const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+  fileStatus.textContent = `✓  ${f.name}  (${(f.size/1024/1024).toFixed(2)} MB)`;
+  fileStatus.className = "selected"; uploadBtn.disabled = false;
+});
+
+let loadInterval;
+function startLoading() {
+  const stages = [
+    { id:"st1", text:"Transcribing audio with Whisper..." },
+    { id:"st2", text:"Cleaning transcript..." },
+    { id:"st3", text:"Sending to Groq AI (Llama 3)..." },
+    { id:"st4", text:"Extracting keywords and notes..." },
+    { id:"st5", text:"Almost done..." }
+  ];
+  let i = 0;
+  document.getElementById("loadingText").textContent = stages[0].text;
+  document.getElementById(stages[0].id).className = "stage active";
+  loadInterval = setInterval(() => {
+    if (i < stages.length - 1) {
+      document.getElementById(stages[i].id).className = "stage done";
+      i++;
+      document.getElementById(stages[i].id).className = "stage active";
+      document.getElementById("loadingText").textContent = stages[i].text;
+    }
+  }, 9000);
+}
+
+function stopLoading() {
+  clearInterval(loadInterval);
+  ["st1","st2","st3","st4","st5"].forEach(id => {
+    document.getElementById(id).className = "stage done";
+  });
+}
+
+uploadBtn.addEventListener("click", () => {
+  const file = fileInput.files[0];
+  if (!file) { alert("Please select a file first"); return; }
+  uploadBtn.disabled = true;
+  loadingEl.style.display = "block";
+  resultEl.style.display  = "none";
+  loadingEl.scrollIntoView({ behavior:"smooth", block:"center" });
+  startLoading();
+  const fd = new FormData();
+  fd.append("file", file);
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "http://127.0.0.1:8000/process-audio/");
+  xhr.onload = function() {
+    stopLoading(); loadingEl.style.display = "none"; uploadBtn.disabled = false;
+    try {
+      const res = JSON.parse(xhr.responseText);
+      if (res.status !== "success" || !res.data) {
+        alert("❌ Error: " + (res.message || "Unknown error"));
+      } else { renderResult(res); }
+    } catch(e) { alert("❌ Invalid response from server"); }
+  };
+  xhr.onerror = function() {
+    stopLoading(); loadingEl.style.display = "none"; uploadBtn.disabled = false;
+    alert("❌ Cannot connect to server.\nMake sure: python -m uvicorn api:app --reload is running.");
+  };
+  xhr.send(fd);
+});
+
+function renderResult(res) {
+  const data = res.data;
+  document.getElementById("resultMeta").textContent = `Generated at ${new Date().toLocaleTimeString()}`;
+
+  if (data.summary && data.summary.trim()) {
+    document.getElementById("summaryText").textContent = data.summary;
+    document.getElementById("summaryCard").style.display = "block";
+  }
+
+  const notesList = document.getElementById("notesList");
+  notesList.innerHTML = "";
+  const notes = data.notes || [];
+  document.getElementById("noteCount").textContent = `${notes.length} notes`;
+  notes.forEach((n, i) => {
+    const clean = n.replace(/^[•\-]\s*/, "");
+    const div = document.createElement("div");
+    div.className = "note-item";
+    div.style.animationDelay = `${i * 0.06}s`;
+    div.innerHTML = `<span class="note-arrow">→</span><span class="note-text">${clean}</span>`;
+    notesList.appendChild(div);
+  });
+  if (notes.length === 0) {
+    notesList.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:16px 0">No notes generated.</p>`;
+  }
+
+  const kwList = document.getElementById("kwList");
+  kwList.innerHTML = "";
+  const kws = data.keywords || [];
+  document.getElementById("kwCount").textContent = `${kws.length} found`;
+  kws.forEach((k, i) => {
+    const span = document.createElement("span");
+    span.className = "kw-chip";
+    span.style.animationDelay = `${i * 0.07}s`;
+    span.textContent = k;
+    kwList.appendChild(span);
+  });
+
+  const ytList = document.getElementById("ytList");
+  ytList.innerHTML = "";
+  (data.youtube_links || []).forEach((v, i) => {
+    const a = document.createElement("a");
+    a.className = "yt-item";
+    a.href = v.link; a.target = "_blank"; a.rel = "noopener";
+    a.style.animationDelay = `${i * 0.07}s`;
+    a.innerHTML = `
+      <div class="yt-icon">▶</div>
+      <div>
+        <div class="yt-name">${v.topic}</div>
+        <div class="yt-sub">Search on YouTube →</div>
+      </div>`;
+    ytList.appendChild(a);
+  });
+
+  document.getElementById("dlHtml").href = res.download_html;
+  document.getElementById("dlPdf").href  = res.download_pdf;
+  resultEl.style.display = "block";
+  resultEl.scrollIntoView({ behavior:"smooth", block:"start" });
+}
+</script>
+</body>
+</html>
